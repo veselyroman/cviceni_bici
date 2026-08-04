@@ -1,0 +1,8 @@
+{
+"name": "Bicí deník",
+"short_name": "Bicí",
+"display": "standalone",
+"start_url": "./",
+"background_color": "#ffffff",
+"theme_color": "#222222"
+}
