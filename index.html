@@ -22,7 +22,6 @@ body{
     display:none;
     min-height:100dvh;
     padding:10px;
-    padding-bottom:90px;
     box-sizing:border-box;
     overflow-y:auto;
 }
@@ -68,15 +67,14 @@ input{
 }
 
 .footer{
-    position:fixed;
-    left:0;
-    right:0;
-    bottom:0;
+    position:sticky;
+    top:0;
     background:#fff;
-    border-top:1px solid #ccc;
+    border-bottom:1px solid #ccc;
     padding:10px;
     display:flex;
     gap:10px;
+    z-index:100;
 }
 
 .card{
@@ -87,6 +85,17 @@ input{
 .card-title{
     font-weight:bold;
     margin-bottom:4px;
+}
+
+.description-item{
+    padding:12px;
+    border-bottom:1px solid #ccc;
+    cursor:pointer;
+    background:#fff;
+}
+
+.description-item:hover{
+    background:#f0f0f0;
 }
 
 .summary{
@@ -226,8 +235,19 @@ summary{
     </div>
 
     <div class="form-row">
-        <label>Popis cvičení</label>
-        <select id="exerciseDescription" onchange="loadLastValues()"></select>
+    	<label>Popis cvičení</label>
+
+	<button
+	        id="exerciseDescriptionButton"
+	        type="button"
+	        onclick="showDescriptionSelector()"
+	        style="
+	            width:100%;
+	            text-align:left;
+	            padding:10px;
+	            font-size:16px;">
+	        Vyber cvičení
+	    </button>
     </div>
 
     <div class="form-row">
@@ -318,7 +338,23 @@ summary{
 
 </div>
 
+<div id="descriptionPage" class="page exercise-bg">
+
+    <div class="footer">
+        <button onclick="showPage('exercisePage')">
+            Zpět
+        </button>
+    </div>
+
+    <h2>Výběr cvičení</h2>
+
+    <div id="descriptionList"></div>
+
+</div>
+
 <script>
+
+let selectedDescription = "";
 
 let currentFilter = "ALL";
 
@@ -400,7 +436,7 @@ function renderSettings(){
     list.innerHTML="";
 
     Object.keys(grouped)
-        .sort()
+        .sort((a,b) => a.localeCompare(b,"cs"))
         .forEach(type => {
 
         const details =
@@ -483,9 +519,9 @@ function loadTypes(){
 
     const settings=getSettings();
 
-    const types=[
-        ...new Set(settings.map(s=>s.type))
-    ].sort();
+    const types = [
+	    ...new Set(settings.map(s => s.type))
+    ].sort((a, b) => a.localeCompare(b, "cs"));
 
     const select=
         document.getElementById("exerciseType");
@@ -508,37 +544,69 @@ function loadTypes(){
 
 function loadDescriptions(){
 
-    const settings=getSettings();
+    selectedDescription = "";
+
+    document.getElementById("exerciseDescriptionButton").textContent = "Vyber cvičení";
+
+	loadLastValues();
+}
+
+function showDescriptionSelector(){
 
     const type =
         document.getElementById("exerciseType").value;
 
     const descriptions =
-        settings.filter(s=>s.type===type);
+        getSettings()
+            .filter(s => s.type === type)
+            .sort((a,b) =>
+                a.description.localeCompare(
+                    b.description,
+                    "cs"
+                )
+            );
 
-    const select =
-        document.getElementById("exerciseDescription");
+    const list =
+        document.getElementById("descriptionList");
 
-    select.innerHTML="";
+    list.innerHTML = "";
 
-    descriptions.forEach(item=>{
+    descriptions.forEach(item => {
 
-        const option =
-            document.createElement("option");
+        const div =
+            document.createElement("div");
 
-        option.value=item.description;
-        option.textContent=item.description;
+        div.className = "description-item";
 
-        select.appendChild(option);
+        div.textContent =
+            item.description;
+
+        div.onclick = () => {
+
+            selectedDescription =
+                item.description;
+
+            document.getElementById(
+                "exerciseDescriptionButton"
+            ).textContent =
+                item.description;
+
+            loadLastValues();
+
+            showPage("exercisePage");
+        };
+
+        list.appendChild(div);
     });
-	loadLastValues();
+
+    showPage("descriptionPage");
 }
 
 function loadLastValues(){
 	const type =
 		document.getElementById("exerciseType").value;
 	const description =
-		document.getElementById("exerciseDescription").value;
+		selectedDescription;
 	const last =
 		getHistory().find(h =>
 			h.type === type &&
@@ -589,7 +657,7 @@ function saveExercise(){
         document.getElementById("exerciseType").value;
 
     const description =
-        document.getElementById("exerciseDescription").value;
+        selectedDescription;
 
     if(!type || !description){
         alert("Vyber Typ a Popis.");
@@ -616,13 +684,13 @@ function saveExercise(){
         document.getElementById("exerciseNote").value
     });
 
-    saveHistoryData(history);
+	saveHistoryData(history);
 
-    document.getElementById("exerciseNote").value="";
+	selectedDescription = "";document.getElementById("exerciseDescriptionButton").textContent = "Vyber cvičení";
 
-    renderHistory();
-
-    showPage("historyPage");
+	document.getElementById("exerciseNote").value="";
+	renderHistory();
+	showPage("historyPage");
 }
 
 function renderHistory(){
@@ -681,7 +749,7 @@ function showFilter(){
 
     const types=[
         ...new Set(settings.map(s=>s.type))
-    ].sort();
+    ].sort((a, b) => a.localeCompare(b, "cs"));
 
     const list=
         document.getElementById("filterList");
