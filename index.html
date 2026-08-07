@@ -229,6 +229,11 @@ summary{
 
     <h2>Cvičení</h2>
 
+    <div class="footer">
+        <button onclick="showPage('historyPage')">Zpět</button>
+        <button onclick="saveExercise()">Uložit</button>
+    </div>
+
     <div class="form-row">
         <label>Typ cvičení</label>
         <select id="exerciseType" onchange="loadDescriptions()"></select>
@@ -274,16 +279,16 @@ summary{
         <textarea id="exerciseNote" rows="4"></textarea>
     </div>
 
-    <div class="footer">
-        <button onclick="showPage('historyPage')">Zpět</button>
-        <button onclick="saveExercise()">Uložit</button>
-    </div>
-
 </div>
 
 <div id="settingsPage" class="page settings-bg">
 
     <h2>Nastavení</h2>
+
+	<div class="footer">
+	    <button onclick="showPage('historyPage')">Zpět</button>
+	    <button onclick="saveSetting()">Uložit</button>
+	</div>
 
     <div class="form-row">
         <label>Typ cvičení</label>
@@ -319,34 +324,29 @@ summary{
 	    Import dat
 	</button>
 
-	<div class="footer">
-	    <button onclick="showPage('historyPage')">Zpět</button>
-	    <button onclick="saveSetting()">Uložit</button>
-	</div>
-
 </div>
 
 <div id="filterPage" class="page history-bg">
 
     <h2>Filtr</h2>
 
-    <div id="filterList"></div>
-
     <div class="footer">
         <button onclick="showPage('historyPage')">Zpět</button>
     </div>
 
+    <div id="filterList"></div>
+
 </div>
 
 <div id="descriptionPage" class="page exercise-bg">
+
+    <h2>Výběr cvičení</h2>
 
     <div class="footer">
         <button onclick="showPage('exercisePage')">
             Zpět
         </button>
     </div>
-
-    <h2>Výběr cvičení</h2>
 
     <div id="descriptionList"></div>
 
