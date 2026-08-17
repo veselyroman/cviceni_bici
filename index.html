@@ -209,11 +209,8 @@ summary{
 
 <div class="form-row">
     <label>Kategorie</label>
-    <select id="exerciseCategory" onchange="loadSecondaryTypes()">
-        <option>Koordinace</option>
-        <option>Akcenty</option>
-        <option>Special</option>
-    </select>
+<select id="exerciseCategory" onchange="loadSecondaryTypes()">
+</select>
 </div>
 
 <div class="form-row">
@@ -222,12 +219,13 @@ summary{
 </div>
 
 <div class="form-row">
-    <label>Varianta</label>
-	<input type="number"
-	       id="exerciseLevel"
-	       min="1"
-	       onchange="loadDescriptions()">
+	<label>Varianta</label>
+		<input 
+			type="number"
+			id="exerciseLevel"
+			min="1">
 </div>
+
     <div class="form-row">
     	<label>Popis cvičení</label>
 
@@ -272,7 +270,25 @@ summary{
 
 <div id="settingsPage" class="page settings-bg">
 
-    <h2>Nastavení</h2>
+<h2>Nastavení</h2>
+
+<h3>Kategorie</h3>
+
+<div class="form-row">
+    <input
+        type="text"
+        id="newCategoryName"
+        placeholder="Nová kategorie">
+</div>
+
+<button onclick="addCategory()">
+    Přidat kategorii
+</button>
+
+<div id="categoriesList"></div>
+
+<br>
+
 
 	<div class="footer">
 	    <button onclick="showPage('historyPage')">Zpět</button>
@@ -281,22 +297,14 @@ summary{
 
 <div class="form-row">
     <label>Kategorie</label>
-    <select id="newCategory">
-        <option>Koordinace</option>
-        <option>Akcenty</option>
-        <option>Special</option>
-    </select>
-</div>
+<select id="newCategory">
+</select></div>
 
 <div class="form-row">
     <label>Skupina</label>
     <input type="text" id="newType">
 </div>
 
-<div class="form-row">
-    <label>Varianta</label>
-    <input type="number" id="newLevel" min="1">
-</div>
     <div class="form-row">
         <label>Popis cvičení</label>
         <textarea id="newDescription" rows="3"></textarea>
@@ -365,8 +373,48 @@ function getSettings(){
     return JSON.parse(localStorage.getItem("settings") || "[]");
 }
 
+function getCategories(){
+    return JSON.parse(
+        localStorage.getItem("categories") ||
+        '["Koordinace","Akcenty","Special"]'
+    );
+}
+
+function saveCategories(data){
+    localStorage.setItem(
+        "categories",
+        JSON.stringify(data)
+    );
+}
+
 function getHistory(){
     return JSON.parse(localStorage.getItem("history") || "[]");
+}
+
+function getSortedCategories(){
+
+    const categories =
+        getCategories();
+
+    const history =
+        getHistory();
+
+    return categories.sort((a,b) => {
+
+        const countA =
+            history.filter(
+                h => h.category === a
+            ).length;
+
+        const countB =
+            history.filter(
+                h => h.category === b
+            ).length;
+
+        return countB - countA;
+
+    });
+
 }
 
 function saveSettings(data){
@@ -393,9 +441,6 @@ const category =
 const type =
     document.getElementById("newType").value.trim();
 
-const level =
-    document.getElementById("newLevel").value.trim();
-
 const description =
     document.getElementById("newDescription").value.trim();
 
@@ -409,13 +454,11 @@ const description =
     settings.push({
 	    category,
 	    type,
-	    level,
 	    description
     });
     saveSettings(settings);
 
 	document.getElementById("newType").value="";
-	document.getElementById("newLevel").value="";
 	document.getElementById("newDescription").value="";
 
     renderSettings();
@@ -431,13 +474,12 @@ function renderSettings(){
     list.innerHTML = "";
 
     const categories =
-        [...new Set(
-            settings.map(s => s.category)
-        )]
-        .filter(Boolean)
-        .sort((a,b)=>
-            a.localeCompare(b,"cs")
-        );
+	    getSortedCategories()
+	        .filter(cat =>
+	            settings.some(
+	                s => s.category === cat
+	            )
+	        );
 
     categories.forEach(category => {
 
@@ -482,80 +524,52 @@ function renderSettings(){
                 typeSummary
             );
 
-            const levels =
-                [...new Set(
-                    settings
-                        .filter(
-                            s =>
-                            s.category === category &&
-                            s.type === type
-                        )
-                        .map(s => s.level)
-                )]
-                .sort((a,b)=>
-                    Number(a) - Number(b)
-                );
+settings
+    .filter(
+        s =>
+        s.category === category &&
+        s.type === type
+    )
+    .sort((a,b)=>
+        a.description.localeCompare(
+            b.description,
+            "cs"
+        )
+    )
+    .forEach(item => {
 
-            levels.forEach(level => {
+	const originalIndex =
+	    settings.findIndex(s =>
+	        s.category === item.category &&
+	        s.type === item.type &&
+	        s.description === item.description
+    );
+        const row =
+            document.createElement("div");
 
-                const levelDetails =
-                    document.createElement("details");
+        row.className =
+            "setting-row";
 
-                const levelSummary =
-                    document.createElement("summary");
+        row.style.cursor = "pointer";
 
-                levelSummary.textContent =
-                    `Varianta ${level}`;
+        row.onclick = () =>
+            loadExerciseFromSettings(item);
 
-                levelDetails.appendChild(
-                    levelSummary
-                );
+        row.innerHTML = `
+            <div>
+                ${item.description}
+            </div>
 
-                settings
-                    .filter(
-                        s =>
-                        s.category === category &&
-                        s.type === type &&
-                        s.level == level
-                    )
-                    .forEach(item => {
+            <button
+                class="delete-btn"
+                onclick="event.stopPropagation();deleteSetting(${originalIndex})">
+                🗑
+            </button>
+        `;
 
-                        const originalIndex =
-                            settings.indexOf(item);
+        typeDetails.appendChild(row);
 
-                        const row =
-                            document.createElement("div");
-
-                        row.className =
-                            "setting-row";
-
-			row.style.cursor = "pointer";
-
-			row.onclick = () =>
-			    loadExerciseFromSettings(item);
-
-                        row.innerHTML = `
-                            <div>
-                                ${item.description}
-                            </div>
-
-                            <button
-                                class="delete-btn"
-				onclick="event.stopPropagation();deleteSetting(${originalIndex})">
-                                🗑
-                            </button>
-                        `;
-
-                        levelDetails.appendChild(
-                            row
-                        );
-                    });
-
-                typeDetails.appendChild(
-                    levelDetails
-                );
-
-            });
+    });
 
             categoryDetails.appendChild(
                 typeDetails
@@ -640,15 +654,11 @@ const category =
 const type =
     document.getElementById("exerciseType").value;
 
-const level =
-    document.getElementById("exerciseLevel").value;
-
 const descriptions =
     getSettings()
         .filter(s =>
             s.category === category &&
-            s.type === type &&
-            s.level == level
+            s.type === type
         )            .sort((a,b) =>
                 a.description.localeCompare(
                     b.description,
@@ -697,16 +707,12 @@ function loadLastValues(){
     const type =
         document.getElementById("exerciseType").value;
 
-    const level =
-        document.getElementById("exerciseLevel").value;
-
     const description =
         selectedDescription;
 
     const last =
         getHistory().find(h =>
             h.type === type &&
-            h.level == level &&
             h.description === description
     );
 
@@ -729,8 +735,13 @@ function loadLastValues(){
 
 function openExercise(){
 
-    document.getElementById("exerciseCategory").value =
-        "Koordinace";
+	const categories =
+	    getSortedCategories();
+
+	document.getElementById(
+	    "exerciseCategory"
+	).value =
+	    categories[0] || "";
 
     loadSecondaryTypes();
 
@@ -823,7 +834,7 @@ history.unshift({
 function loadExerciseFromHistory(item){
 
     document.getElementById("exerciseCategory").value =
-        item.category || "Koordinace";
+	    item.category || getSortedCategories()[0] || "";
 
     loadSecondaryTypes();
 
@@ -860,15 +871,23 @@ function loadExerciseFromSettings(item){
 
     loadSecondaryTypes();
 
-    document.getElementById("exerciseType").value =
-        item.type;
+document.getElementById("exerciseType").value =
+    item.type;
 
-    document.getElementById("exerciseLevel").value =
-        item.level || "";
+selectedDescription =
+    item.description;
 
-    selectedDescription =
-        item.description;
+const lastExercise =
+    getHistory().find(h =>
+        h.category === item.category &&
+        h.type === item.type &&
+        h.description === item.description
+    );
 
+document.getElementById("exerciseLevel").value =
+    lastExercise
+        ? lastExercise.level
+        : "";
     document.getElementById(
         "exerciseDescriptionButton"
     ).textContent =
@@ -1031,13 +1050,12 @@ function showFilter(){
     const history = getHistory();
 
     const categories =
-        [...new Set(
-            history
-                .map(h => h.category)
-                .filter(Boolean)
-        )].sort((a,b)=>
-            a.localeCompare(b,"cs")
-        );
+	    getSortedCategories()
+	        .filter(cat =>
+	            history.some(
+	                h => h.category === cat
+	            )
+	        );
 
     const list =
         document.getElementById("filterList");
@@ -1252,7 +1270,118 @@ function importData(event){
     reader.readAsText(file);
 }
 
+function addCategory(){
+
+    const name =
+        document
+        .getElementById("newCategoryName")
+        .value
+        .trim();
+
+    if(!name){
+        return;
+    }
+
+    const categories =
+        getCategories();
+
+    if(categories.includes(name)){
+        alert(
+            "Kategorie již existuje."
+        );
+        return;
+    }
+
+    categories.push(name);
+
+    saveCategories(categories);
+
+    document.getElementById(
+        "newCategoryName"
+    ).value = "";
+
+    renderCategories();
+    fillCategorySelects();
+}
+
+function renderCategories(){
+
+    const list =
+        document.getElementById(
+            "categoriesList"
+        );
+
+    list.innerHTML = "";
+
+getSortedCategories().forEach(cat => {
+
+        const row =
+            document.createElement("div");
+
+        row.className =
+            "setting-row";
+
+        row.innerHTML =
+            `<div>${cat}</div>`;
+
+        list.appendChild(row);
+
+    });
+}
+
+function fillCategorySelects(){
+
+    const categories =
+	    getSortedCategories();
+
+    const exerciseSelect =
+        document.getElementById(
+            "exerciseCategory"
+        );
+
+    const settingSelect =
+        document.getElementById(
+            "newCategory"
+        );
+
+    exerciseSelect.innerHTML = "";
+    settingSelect.innerHTML = "";
+
+    categories.forEach(cat => {
+
+        const option1 =
+            document.createElement(
+                "option"
+            );
+
+        option1.value = cat;
+        option1.textContent = cat;
+
+        exerciseSelect.appendChild(
+            option1
+        );
+
+        const option2 =
+            document.createElement(
+                "option"
+            );
+
+        option2.value = cat;
+        option2.textContent = cat;
+
+        settingSelect.appendChild(
+            option2
+        );
+
+    });
+
+}
+
 createBpmList();
+
+fillCategorySelects();
+renderCategories();
+
 renderSettings();
 renderHistory();
 
