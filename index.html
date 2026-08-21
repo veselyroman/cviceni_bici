@@ -798,6 +798,14 @@ function saveExercise(){
         return;
     }
 
+    if(!level){
+	    if(!confirm(
+	        "Pole Varianta není vyplněno. Chcete cvičení uložit bez Varianty?"
+	    )){
+	        return;
+	    }
+	}
+
     const history=getHistory();
 
 history.unshift({
