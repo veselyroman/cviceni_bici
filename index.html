@@ -242,10 +242,13 @@ summary{
 	    </button>
     </div>
 
-    <div class="form-row">
-        <label>Metronom</label>
-        <select id="exerciseBpm"></select>
+<div class="form-row">
+    <label>Metronom</label>
+    <select id="exerciseBpm" onchange="updateBpmMaximum()"></select>
+    <div id="bpmMaximum"
+         style="font-size:13px;color:#666;margin-top:4px;display:none;">
     </div>
+</div>
 
     <div class="form-row">
         <label>Opakování</label>
@@ -703,34 +706,75 @@ const descriptions =
 }
 
 function loadLastValues(){
-
+    const category =
+        document.getElementById("exerciseCategory").value;
     const type =
         document.getElementById("exerciseType").value;
-
     const description =
         selectedDescription;
 
-    const last =
-        getHistory().find(h =>
+    const exercises =
+        getHistory().filter(h =>
+            h.category === category &&
             h.type === type &&
             h.description === description
-    );
+        );
+
+    const last = exercises[0];
 
     if(!last){
         document.getElementById("exerciseBpm").value = "0";
         document.getElementById("exerciseRepeat").value = "1x";
         document.getElementById("exerciseNote").value = "";
+        updateBpmMaximum();
         return;
     }
 
     document.getElementById("exerciseBpm").value =
         last.bpm;
-
     document.getElementById("exerciseRepeat").value =
         last.repeat;
-
     document.getElementById("exerciseNote").value =
         last.note || "";
+
+    updateBpmMaximum();
+}
+
+function updateBpmMaximum(){
+    const category =
+        document.getElementById("exerciseCategory").value;
+    const type =
+        document.getElementById("exerciseType").value;
+    const description =
+        selectedDescription;
+    const currentBpm =
+        Number(document.getElementById("exerciseBpm").value);
+
+    const maximumElement =
+        document.getElementById("bpmMaximum");
+
+    const bpmValues =
+        getHistory()
+            .filter(h =>
+                h.category === category &&
+                h.type === type &&
+                h.description === description
+            )
+            .map(h => Number(h.bpm) || 0);
+
+    const maxBpm =
+        bpmValues.length
+            ? Math.max(...bpmValues)
+            : 0;
+
+    if(maxBpm > currentBpm){
+        maximumElement.textContent =
+            `Maximum: ${maxBpm} BPM`;
+        maximumElement.style.display = "block";
+    }else{
+        maximumElement.textContent = "";
+        maximumElement.style.display = "none";
+    }
 }
 
 function openExercise(){
