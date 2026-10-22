@@ -884,9 +884,8 @@ history.unshift({
 }
 
 function loadExerciseFromHistory(item){
-
     document.getElementById("exerciseCategory").value =
-	    item.category || getSortedCategories()[0] || "";
+        item.category || getSortedCategories()[0] || "";
 
     loadSecondaryTypes();
 
@@ -912,6 +911,8 @@ function loadExerciseFromHistory(item){
 
     document.getElementById("exerciseNote").value =
         item.note || "";
+
+    updateBpmMaximum();
 
     showPage("exercisePage");
 }
@@ -1232,12 +1233,10 @@ function showFilter(){
 }
 
 function exportData(){
-
     const data = {
-
+        categories:getCategories(),
         settings:getSettings(),
         history:getHistory()
-
     };
 
     const json =
@@ -1271,7 +1270,6 @@ function exportData(){
 }
 
 function importData(event){
-
     const file =
         event.target.files[0];
 
@@ -1283,35 +1281,50 @@ function importData(event){
         new FileReader();
 
     reader.onload = function(e){
-
         try{
-
             const data =
                 JSON.parse(e.target.result);
 
             if(
-                !data.settings ||
-                !data.history
+                !Array.isArray(data.settings) ||
+                !Array.isArray(data.history)
             ){
                 throw new Error();
             }
 
-            saveSettings(
-                data.settings
-            );
+            let categories;
 
-            saveHistoryData(
-                data.history
-            );
+            if(Array.isArray(data.categories)){
+                categories =
+                    data.categories;
+            }else{
+                categories = [
+                    ...new Set([
+                        ...getCategories(),
+                        ...data.settings.map(
+                            item => item.category
+                        ),
+                        ...data.history.map(
+                            item => item.category
+                        )
+                    ].filter(Boolean))
+                ];
+            }
 
+            saveCategories(categories);
+            saveSettings(data.settings);
+            saveHistoryData(data.history);
+
+            fillCategorySelects();
+            renderCategories();
             renderSettings();
             renderHistory();
 
-            alert(
-                "Import dokončen."
-            );
+            event.target.value = "";
 
+            alert("Import dokončen.");
         }catch(error){
+            event.target.value = "";
 
             alert(
                 "Soubor není platná záloha."
