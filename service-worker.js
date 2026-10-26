@@ -1,4 +1,4 @@
-const CACHE_NAME = "bici-denik-v13";
+const CACHE_NAME = "bici-denik-v14";
 
 const FILES_TO_CACHE = [
     "./",
