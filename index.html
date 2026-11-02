@@ -181,6 +181,27 @@ summary{
 
 }
 
+.stopwatch {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.stopwatch #stopwatchTime {
+    min-width: 72px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.stopwatch button {
+    padding: 8px 10px;
+    font-size: 14px;
+}
+
 </style>
 </head>
 
@@ -201,6 +222,31 @@ summary{
 <div id="exercisePage" class="page exercise-bg">
 
     <h2>Cvičení</h2>
+
+<div class="stopwatch">
+    <span id="stopwatchTime">00:00</span>
+
+    <button
+        id="stopwatchStart"
+        type="button"
+        onclick="startStopwatch()">
+        Start
+    </button>
+
+    <button
+        id="stopwatchStop"
+        type="button"
+        onclick="stopStopwatch()"
+        disabled>
+        Stop
+    </button>
+
+    <button
+        type="button"
+        onclick="resetStopwatch()">
+        Vynulovat
+    </button>
+</div>
 
     <div class="footer">
         <button onclick="showPage('historyPage')">Zpět</button>
@@ -368,6 +414,103 @@ summary{
 </div>
 
 <script>
+
+let stopwatchRunning = false;
+let stopwatchStartedAt = 0;
+let stopwatchElapsed = 0;
+let stopwatchTimer = null;
+let wakeLock = null;
+
+function formatStopwatch(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return String(minutes).padStart(2, "0") + ":" +
+           String(seconds).padStart(2, "0");
+}
+
+function updateStopwatchDisplay() {
+    let elapsed = stopwatchElapsed;
+
+    if (stopwatchRunning) {
+        elapsed += Date.now() - stopwatchStartedAt;
+    }
+
+    document.getElementById("stopwatchTime").textContent =
+        formatStopwatch(elapsed);
+}
+
+async function requestWakeLock() {
+    if ("wakeLock" in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request("screen");
+        } catch (err) {
+            console.log("Wake Lock se nepodařilo aktivovat:", err);
+        }
+    }
+}
+
+async function releaseWakeLock() {
+    if (wakeLock) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+        } catch (err) {
+            console.log("Wake Lock se nepodařilo uvolnit:", err);
+        }
+    }
+}
+
+function startStopwatch() {
+    if (stopwatchRunning) return;
+
+    stopwatchRunning = true;
+    stopwatchStartedAt = Date.now();
+
+    document.getElementById("stopwatchStart").disabled = true;
+    document.getElementById("stopwatchStop").disabled = false;
+
+    stopwatchTimer = setInterval(updateStopwatchDisplay, 250);
+    updateStopwatchDisplay();
+    requestWakeLock();
+}
+
+function stopStopwatch() {
+    if (!stopwatchRunning) return;
+
+    stopwatchElapsed += Date.now() - stopwatchStartedAt;
+    stopwatchRunning = false;
+
+    clearInterval(stopwatchTimer);
+    stopwatchTimer = null;
+
+    document.getElementById("stopwatchStart").disabled = false;
+    document.getElementById("stopwatchStop").disabled = true;
+
+    updateStopwatchDisplay();
+    releaseWakeLock();
+}
+
+function resetStopwatch() {
+    stopwatchElapsed = 0;
+
+    if (stopwatchRunning) {
+        stopwatchStartedAt = Date.now();
+    }
+
+    updateStopwatchDisplay();
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (
+        stopwatchRunning &&
+        document.visibilityState === "visible" &&
+        !wakeLock
+    ) {
+        requestWakeLock();
+    }
+});
 
 let selectedDescription = "";
 
