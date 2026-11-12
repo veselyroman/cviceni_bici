@@ -1191,10 +1191,14 @@ function renderHistory(){
             const summary =
                 document.createElement("summary");
 
-            summary.textContent =
-                `${monthNames[month]} ${year} (${grouped[key].length})`;
+	const dayCount =
+	    new Set(
+	        grouped[key].map(item => item.date)
+	    ).size;
 
-            details.appendChild(summary);
+	summary.textContent =
+	    `${monthNames[month]} ${year} (${grouped[key].length}/${dayCount})`;
+	            details.appendChild(summary);
 
             grouped[key].forEach(item => {
 
